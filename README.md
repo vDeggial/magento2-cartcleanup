@@ -1,5 +1,7 @@
 # Cart Cleanup - Magento 2 Module
 
+This module removes products that are either disabled or do not exist in catalog from Carts using Cron schedule
+
 ## Requirements
 
 *   Magento 2.x.x
