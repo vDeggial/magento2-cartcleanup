@@ -10,6 +10,7 @@ use Hapex\CartCleanup\Helper\Data as DataHelper;
 class Cleanup extends BaseCron
 {
     protected $resource;
+    protected $connection;
     protected $tableCartItems;
     protected $tableProductEntity;
     protected $tableAttribute;
@@ -21,6 +22,7 @@ class Cleanup extends BaseCron
     {
         parent::__construct($helperData, $helperLog);
         $this->resource = $resource;
+        $this->connection = $this->resource->getConnection();
         $this->tableCartItems = $this->resource->getTableName("quote_item");
         $this->tableProductEntity = $this->resource->getTableName("catalog_product_entity");
         $this->tableAttribute = $this->resource->getTableName("catalog_product_entity_int");
@@ -57,7 +59,7 @@ class Cleanup extends BaseCron
                 case true:
                     $this->helperData->log("- Found $count invalid cart items");
                     $this->helperData->log("- Deleting invalid cart items");
-                    $this->deleteInvalidCartItems($items);
+                    $this->deleteInvalidCartItems(array_column($items, "item_id"));
                     break;
 
                 default:
@@ -73,8 +75,7 @@ class Cleanup extends BaseCron
     {
         $items = [];
         try {
-            $connection = $this->resource->getConnection();
-            $result = $connection->query($this->sqlSelectInvalid);
+            $result = $this->connection->query($this->sqlSelectInvalid);
             $items = $result->fetchAll();
         } catch (\Exception $e) {
             $this->helperData->errorLog(__METHOD__, $e->getMessage());
@@ -84,15 +85,14 @@ class Cleanup extends BaseCron
         }
     }
 
-    protected function deleteInvalidCartItems(&$items = [])
+    protected function deleteInvalidCartItems($items = [])
     {
         try {
-            $connection = $this->resource->getConnection();
             $table = $this->tableCartItems;
-            $itemsString = implode(",", array_column($items, "item_id"));
+            $itemsString = implode(",", $items);
             $this->helperData->log($itemsString);
             $sql = "DELETE FROM $table WHERE item_id in($itemsString)";
-            $result = $connection->query($sql);
+            $result = $this->connection->query($sql);
             $count = $result->rowCount();
             $this->helperData->log("- Deleted $count invalid cart items");
         } catch (\Exception $e) {
