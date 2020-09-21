@@ -36,28 +36,36 @@ class Cleanup extends BaseCron
                 try {
                     $this->helperData->log("");
                     $this->helperData->log("Starting Cart Cleanup");
-                    $this->helperData->log("- Looking for cart items which do not exist in catalog or are disabled");
                     $items = $this->getInvalidCartItems();
-                    $count = count($items);
-
-                    switch ($count > 0) {
-                        case true:
-                            $this->helperData->log("- Found $count invalid cart items");
-                            $this->helperData->log("- Deleting invalid cart items");
-                            $this->deleteInvalidCartItems($items);
-                            break;
-
-                        default:
-                            $this->helperData->log("- Found no invalid cart items");
-                            break;
-                    }
-
+                    $this->processCartItems($items);
                     $this->helperData->log("Ending Cart Cleanup");
                 } catch (\Exception $e) {
                     $this->helperData->errorLog(__METHOD__, $e->getMessage());
                 } finally {
                     return $this;
                 }
+        }
+    }
+
+    protected function processCartItems(&$items = [])
+    {
+        try {
+            $this->helperData->log("- Looking for cart items which do not exist in catalog or are disabled");
+            $count = count($items);
+
+            switch ($count > 0) {
+                case true:
+                    $this->helperData->log("- Found $count invalid cart items");
+                    $this->helperData->log("- Deleting invalid cart items");
+                    $this->deleteInvalidCartItems($items);
+                    break;
+
+                default:
+                    $this->helperData->log("- Found no invalid cart items");
+                    break;
+            }
+        } catch (\Exception $e) {
+            $this->helperData->errorLog(__METHOD__, $e->getMessage());
         }
     }
 
@@ -76,7 +84,7 @@ class Cleanup extends BaseCron
         }
     }
 
-    protected function deleteInvalidCartItems($items = [])
+    protected function deleteInvalidCartItems(&$items = [])
     {
         try {
             $connection = $this->resource->getConnection();
