@@ -13,6 +13,9 @@ class Cleanup extends BaseCron
     protected $tableCartItems;
     protected $tableProductEntity;
     protected $tableAttribute;
+    protected $sqlSelectProducts;
+    protected $sqlSelectDisabled;
+    protected $sqlSelectInvalid;
 
     public function __construct(DataHelper $helperData, LogHelper $helperLog, ResourceConnection $resource)
     {
@@ -21,6 +24,9 @@ class Cleanup extends BaseCron
         $this->tableCartItems = $this->resource->getTableName("quote_item");
         $this->tableProductEntity = $this->resource->getTableName("catalog_product_entity");
         $this->tableAttribute = $this->resource->getTableName("catalog_product_entity_int");
+        $this->sqlSelectProducts = "select entity_id from " . $this->tableProductEntity;
+        $this->sqlSelectDisabled = "select products.entity_id from " . $this->tableProductEntity . " products join " . $this->tableAttribute . " attributes on products.entity_id = attributes.entity_id where attributes.attribute_id = 97 and attributes.value <> 1";
+        $this->sqlSelectInvalid = "select item_id from " . $this->tableCartItems . " where product_id not in (" . $this->sqlSelectProducts . ") or product_id in (" . $this->sqlSelectDisabled . ")";
     }
 
     public function cleanCarts()
@@ -30,7 +36,22 @@ class Cleanup extends BaseCron
                 try {
                     $this->helperData->log("");
                     $this->helperData->log("Starting Cart Cleanup");
-                    $this->deleteInvalidCartItems();
+                    $this->helperData->log("- Looking for cart items which do not exist in catalog or are disabled");
+                    $items = $this->getInvalidCartItems();
+                    $count = count($items);
+
+                    switch ($count > 0) {
+                        case true:
+                            $this->helperData->log("- Found $count invalid cart items");
+                            $this->helperData->log("- Deleting invalid cart items");
+                            $this->deleteInvalidCartItems($items);
+                            break;
+
+                        default:
+                            $this->helperData->log("- Found no invalid cart items");
+                            break;
+                    }
+
                     $this->helperData->log("Ending Cart Cleanup");
                 } catch (\Exception $e) {
                     $this->helperData->errorLog(__METHOD__, $e->getMessage());
@@ -40,21 +61,32 @@ class Cleanup extends BaseCron
         }
     }
 
-    protected function deleteInvalidCartItems()
+    protected function getInvalidCartItems()
+    {
+        $items = [];
+        try {
+            $connection = $this->resource->getConnection();
+            $result = $connection->query($this->sqlSelectInvalid);
+            $items = $result->fetchAll();
+        } catch (\Exception $e) {
+            $this->helperData->errorLog(__METHOD__, $e->getMessage());
+            $items = [];
+        } finally {
+            return $items;
+        }
+    }
+
+    protected function deleteInvalidCartItems($items = [])
     {
         try {
             $connection = $this->resource->getConnection();
             $table = $this->tableCartItems;
-            $tableProduct = $this->tableProductEntity;
-            $tableAttribute = $this->tableAttribute;
-            $sqlProductExists = "select entity_id from $tableProduct";
-            $sqlProductDisabled = "select products.entity_id from $tableProduct products join $tableAttribute attributes on products.entity_id = attributes.entity_id where attributes.attribute_id = 97 and attributes.value <> 1";
-            $sqlSelect = "select item_id from $table where product_id not in ($sqlProductExists) or product_id in ($sqlProductDisabled)";
-            $this->helperData->log("- Looking for cart items which do not exist in catalog or are disabled");
-            $sql = "DELETE FROM $table WHERE item_id in($sqlSelect)";
+            $itemsString = implode(",", array_column($items, "item_id"));
+            $this->helperData->log($itemsString);
+            $sql = "DELETE FROM $table WHERE item_id in($itemsString)";
             $result = $connection->query($sql);
             $count = $result->rowCount();
-            $this->helperData->log("- Cleaned $count cart items");
+            $this->helperData->log("- Deleted $count invalid cart items");
         } catch (\Exception $e) {
             $this->helperData->errorLog(__METHOD__, $e->getMessage());
         }
