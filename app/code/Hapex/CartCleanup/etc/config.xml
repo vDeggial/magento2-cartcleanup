@@ -4,6 +4,8 @@
         <hapex_cartcleanup>
             <general>
                 <enable>1</enable>
+                <enable_login>1</enable_login>
+                <enable_cron>1</enable_cron>
                 <cron_schedule>0 * * * *</cron_schedule>
             </general>
         </hapex_cartcleanup>

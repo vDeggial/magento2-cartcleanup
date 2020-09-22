@@ -33,7 +33,7 @@ class Cleanup extends BaseCron
 
     public function cleanCarts()
     {
-        switch ($this->helperData->isEnabled()) {
+        switch ($this->helperData->isEnabled() && $this->helperData->isEnabledCron()) {
             case true:
                 try {
                     $this->helperData->log("");
@@ -52,18 +52,18 @@ class Cleanup extends BaseCron
     protected function processCartItems(&$items = [])
     {
         try {
-            $this->helperData->log("- Looking for cart items which do not exist in catalog or are disabled");
+            $this->helperData->log("- Looking for deleted/disabled products in carts");
             $count = count($items);
 
             switch ($count > 0) {
                 case true:
-                    $this->helperData->log("- Found $count invalid cart items");
-                    $this->helperData->log("- Deleting invalid cart items");
+                    $this->helperData->log("- Found $count deleted/disabled items in carts");
+                    $this->helperData->log("- Deleting deleted/disabled items from carts");
                     $this->deleteInvalidCartItems(array_column($items, "item_id"));
                     break;
 
                 default:
-                    $this->helperData->log("- Found no invalid cart items");
+                    $this->helperData->log("- Found no deleted/disabled items in any cart");
                     break;
             }
         } catch (\Exception $e) {
@@ -94,7 +94,7 @@ class Cleanup extends BaseCron
             $sql = "DELETE FROM $table WHERE item_id in($itemsString)";
             $result = $this->connection->query($sql);
             $count = $result->rowCount();
-            $this->helperData->log("- Deleted $count invalid cart items");
+            $this->helperData->log("- Deleted $count deleted/disabled cart items");
         } catch (\Exception $e) {
             $this->helperData->errorLog(__METHOD__, $e->getMessage());
         }

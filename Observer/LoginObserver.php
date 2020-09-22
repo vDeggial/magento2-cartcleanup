@@ -35,27 +35,24 @@ class LoginObserver extends BaseObserver
 
     public function execute(Observer $observer)
     {
+        switch ($this->helperData->isEnabled() && $this->helperData->isEnabledLogin()) {
+            case true:
+                $this->processEvent($observer);
+                break;
+        }
+    }
+
+    protected function processEvent(Observer $observer)
+    {
         $success = false;
         try {
             $this->helperData->log("");
             $this->helperData->log("Starting Cart Cleanup Login Observer");
             $customerId = $observer->getEvent()->getCustomer()->getId();
             $this->helperData->log("- Customer with ID $customerId has logged in");
-            $this->helperData->log("- Checking customer's Cart for invalid products");
+            $this->helperData->log("- Checking customer's Cart for deleted/disabled products");
             $cartItems = $this->getCartItems();
-            $count = count($cartItems);
-            switch ($count > 0) {
-                case true:
-                    $this->helperData->log("- Found $count Items in the Cart");
-                    $this->helperData->log("- Checking Cart Items");
-                    $success = $this->processCartItems($cartItems);
-                    break;
-
-                default:
-                    $this->helperData->log("- Empty Cart detected");
-                    $success = true;
-                    break;
-            }
+            $success = $this->processCartItems($cartItems);
             $this->helperData->log("Ending Cart Cleanup Login Observer");
         } catch (\Exception $e) {
             $this->helperLog->errorLog(__METHOD__, $e->getMessage());
@@ -66,12 +63,34 @@ class LoginObserver extends BaseObserver
         }
     }
 
+    protected function processCartItems($cartItems = [])
+    {
+        try {
+            $count = count($cartItems);
+            switch ($count > 0) {
+                case true:
+                    $this->helperData->log("- Found $count Items in the Cart");
+                    $this->helperData->log("- Checking Cart Items");
+                    return $this->validateCartItems($cartItems);
+                    break;
+
+                default:
+                    $this->helperData->log("- Empty Cart detected");
+                    return true;
+                    break;
+            }
+        } catch (\Exception $e) {
+            $this->helperLog->errorLog(__METHOD__, $e->getMessage());
+            return false;
+        }
+    }
+
     protected function getCartItems()
     {
         return $this->session->getQuote()->getAllItems();
     }
 
-    protected function processCartItems($cartItems = [])
+    protected function validateCartItems($cartItems = [])
     {
         try {
             $count = 0;
@@ -82,12 +101,12 @@ class LoginObserver extends BaseObserver
                     case true:
                         $this->helperData->log("-- Found product $productId in the Cart that either no longer exists or is Disabled");
                         $this->cart->removeItem($item->getItemId())->save();
-                        $this->helperData->log("-- Removed invalid product $productId from the Cart");
+                        $this->helperData->log("-- Removed deleted/disabled product $productId from the Cart");
                         $count++;
                         break;
                 }
             }
-            $this->helperData->log("- Removed $count invalid products from the Cart");
+            $this->helperData->log("- Removed $count deleted/disabled products from the Cart");
             return true;
         } catch (\Exception $e) {
             $this->helperLog->errorLog(__METHOD__, $e->getMessage());

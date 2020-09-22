@@ -17,12 +17,30 @@
                 <field id="enable" translate="label" type="select" sortOrder="2" showInDefault="1" showInWebsite="0" showInStore="0">
                     <label>Module Enabled</label>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="enable_login" translate="label" type="select" sortOrder="2" showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Login Cart Cleaning Enabled</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <depends>
+                        <field id="hapex_cartcleanup/general/enable" separator=",">1</field>
+                    </depends>
+                </field>
+                <field id="enable_cron" translate="label" type="select" sortOrder="2" showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Cron Cart Cleaning Enabled</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                     <comment>Cron cleaning is done on schedule</comment>
+                    <depends>
+                        <field id="hapex_cartcleanup/general/enable" separator=",">1</field>
+                    </depends>
                 </field>
                 <field id="cron_schedule" translate="label" type="text" sortOrder="4" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Cart Cleanup Schedule</label>
                     <comment>(Cron Expression) | Default: 0 * * * * (Once an Hour)</comment>
                     <validate>validate-no-empty validate-length minimum-length-9</validate>
+                    <depends>
+                        <field id="hapex_cartcleanup/general/enable" separator=",">1</field>
+                        <field id="hapex_cartcleanup/general/enable_cron" separator=",">1</field>
+                    </depends>
                 </field>
             </group>
         </section>
