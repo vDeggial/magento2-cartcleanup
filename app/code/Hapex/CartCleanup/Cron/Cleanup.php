@@ -37,10 +37,10 @@ class Cleanup extends BaseCron
             case true:
                 try {
                     $this->helperData->log("");
-                    $this->helperData->log("Starting Cart Cleanup");
+                    $this->helperData->log("Starting Cart Cleanup Cron");
                     $items = $this->getInvalidCartItems();
                     $this->processCartItems($items);
-                    $this->helperData->log("Ending Cart Cleanup");
+                    $this->helperData->log("Ending Cart Cleanup Cron");
                 } catch (\Exception $e) {
                     $this->helperData->errorLog(__METHOD__, $e->getMessage());
                 } finally {
