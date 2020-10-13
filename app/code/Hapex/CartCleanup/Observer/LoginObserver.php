@@ -72,12 +72,10 @@ class LoginObserver extends BaseObserver
                     $this->helperData->log("- Found $count Items in the Cart");
                     $this->helperData->log("- Checking Cart Items");
                     return $this->validateCartItems($cartItems);
-                    break;
 
                 default:
                     $this->helperData->log("- Empty Cart detected");
                     return true;
-                    break;
             }
         } catch (\Exception $e) {
             $this->helperLog->errorLog(__METHOD__, $e->getMessage());
