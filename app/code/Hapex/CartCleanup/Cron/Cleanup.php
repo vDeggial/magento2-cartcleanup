@@ -41,7 +41,7 @@ class Cleanup extends BaseCron
                     $items = $this->getInvalidCartItems();
                     $this->processCartItems($items);
                     $this->helperData->log("Ending Cart Cleanup Cron");
-                } catch (\Exception $e) {
+                } catch (\Throwable $e) {
                     $this->helperData->errorLog(__METHOD__, $e->getMessage());
                 } finally {
                     return $this;
@@ -66,7 +66,7 @@ class Cleanup extends BaseCron
                     $this->helperData->log("- Found no deleted/disabled items in any cart");
                     break;
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->helperData->errorLog(__METHOD__, $e->getMessage());
         }
     }
@@ -77,7 +77,7 @@ class Cleanup extends BaseCron
         try {
             $result = $this->connection->query($this->sqlSelectInvalid);
             $items = $result->fetchAll();
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->helperData->errorLog(__METHOD__, $e->getMessage());
             $items = [];
         } finally {
@@ -95,7 +95,7 @@ class Cleanup extends BaseCron
             $result = $this->connection->query($sql);
             $count = $result->rowCount();
             $this->helperData->log("- Deleted $count deleted/disabled cart items");
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->helperData->errorLog(__METHOD__, $e->getMessage());
         }
     }

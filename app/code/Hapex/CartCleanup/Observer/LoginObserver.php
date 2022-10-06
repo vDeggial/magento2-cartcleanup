@@ -54,7 +54,7 @@ class LoginObserver extends BaseObserver
             $cartItems = $this->getCartItems();
             $success = $this->processCartItems($cartItems);
             $this->helperData->log("Ending Cart Cleanup Login Observer");
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->helperLog->errorLog(__METHOD__, $e->getMessage());
             $this->messageManager->addErrorMessage($e->getMessage());
             $success = false;
@@ -77,7 +77,7 @@ class LoginObserver extends BaseObserver
                     $this->helperData->log("- Empty Cart detected");
                     return true;
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->helperLog->errorLog(__METHOD__, $e->getMessage());
             return false;
         }
@@ -106,7 +106,7 @@ class LoginObserver extends BaseObserver
             }
             $this->helperData->log("- Removed $count deleted/disabled products from the Cart");
             return true;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->helperLog->errorLog(__METHOD__, $e->getMessage());
             return false;
         }
