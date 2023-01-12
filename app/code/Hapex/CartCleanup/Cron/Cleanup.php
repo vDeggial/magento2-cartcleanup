@@ -11,6 +11,7 @@ class Cleanup extends BaseCron
 {
     protected $resource;
     protected $connection;
+    protected $tableCart;
     protected $tableCartItems;
     protected $tableProductEntity;
     protected $tableAttribute;
@@ -23,6 +24,7 @@ class Cleanup extends BaseCron
         parent::__construct($helperData, $helperLog);
         $this->resource = $resource;
         $this->connection = $this->resource->getConnection();
+        $this->tableCart = $this->resource->getTableName("quote");
         $this->tableCartItems = $this->resource->getTableName("quote_item");
         $this->tableProductEntity = $this->resource->getTableName("catalog_product_entity");
         $this->tableAttribute = $this->resource->getTableName("catalog_product_entity_int");
@@ -40,12 +42,65 @@ class Cleanup extends BaseCron
                     $this->helperData->log("Starting Cart Cleanup Cron");
                     $items = $this->getInvalidCartItems();
                     $this->processCartItems($items);
+                    //$carts = $this->getExpiredCarts("6 HOUR");
+                    //$this->processExpiredCarts($carts);
                     $this->helperData->log("Ending Cart Cleanup Cron");
-                } catch (\Throwable $e) {
+                } catch (\Exception $e) {
                     $this->helperData->errorLog(__METHOD__, $e->getMessage());
                 } finally {
                     return $this;
                 }
+        }
+    }
+
+    protected function processExpiredCarts(&$carts = [])
+    {
+        try {
+            $this->helperData->log("- Looking for old carts");
+            $count = count($carts);
+
+            switch ($count > 0) {
+                case true:
+                    $this->helperData->log("- Found $count old carts");
+                    $this->helperData->log("- Expiring old carts");
+                    $this->doExpireCarts($carts);
+                    break;
+
+                default:
+                    $this->helperData->log("- Found no old carts");
+                    break;
+            }
+        } catch (\Exception $e) {
+            $this->helperData->errorLog(__METHOD__, $e->getMessage());
+        }
+    }
+
+    protected function getExpiredCarts($interval = "6 HOUR")
+    {
+        $items = [];
+        try {
+            $sql = "SELECT * FROM " . $this->tableCart . " WHERE updated_at <= NOW() - INTERVAL $interval and is_active = 1";
+            $result = $this->connection->query($sql);
+            $items = $result->fetchAll();
+        } catch (\Exception $e) {
+            $this->helperData->errorLog(__METHOD__, $e->getMessage());
+            $items = [];
+        } finally {
+            return $items;
+        }
+    }
+
+    protected function doExpireCarts(&$carts = [])
+    {
+        try {
+            $entities = array_column($carts, "entity_id");
+            $ids = !empty($entities) ? implode(",", $entities) : null;
+            $sql = "UPDATE " . $this->tableCart . " SET is_active = 0 WHERE entity_id IN ($ids)";
+            $result = $this->connection->query($sql);
+            $count = $result->rowCount();
+            $this->helperData->log("- Expired $count old carts");
+        } catch (\Exception $e) {
+            $this->helperData->errorLog(__METHOD__, $e->getMessage());
         }
     }
 
@@ -66,7 +121,7 @@ class Cleanup extends BaseCron
                     $this->helperData->log("- Found no deleted/disabled items in any cart");
                     break;
             }
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             $this->helperData->errorLog(__METHOD__, $e->getMessage());
         }
     }
@@ -77,7 +132,7 @@ class Cleanup extends BaseCron
         try {
             $result = $this->connection->query($this->sqlSelectInvalid);
             $items = $result->fetchAll();
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             $this->helperData->errorLog(__METHOD__, $e->getMessage());
             $items = [];
         } finally {
@@ -95,7 +150,7 @@ class Cleanup extends BaseCron
             $result = $this->connection->query($sql);
             $count = $result->rowCount();
             $this->helperData->log("- Deleted $count deleted/disabled cart items");
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             $this->helperData->errorLog(__METHOD__, $e->getMessage());
         }
     }
