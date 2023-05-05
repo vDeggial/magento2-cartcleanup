@@ -35,7 +35,7 @@ class Cleanup extends BaseCron
 
     public function cleanCarts()
     {
-        switch ($this->helperData->isEnabled() && $this->helperData->isEnabledCron()) {
+        switch (!$this->isMaintenance && $this->helperData->isEnabled() && $this->helperData->isEnabledCron()) {
             case true:
                 try {
                     $this->helperData->log("");
