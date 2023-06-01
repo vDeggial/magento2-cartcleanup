@@ -46,7 +46,7 @@ class Cleanup extends BaseCron
                     //$this->processExpiredCarts($carts);
                     $this->helperData->log("Ending Cart Cleanup Cron");
                 } catch (\Exception $e) {
-                    $this->helperData->errorLog(__METHOD__, $e->getMessage());
+                    $this->helperData->errorLog(__METHOD__, $this->helperData->getExceptionTrace($e));
                 } finally {
                     return $this;
                 }
@@ -71,7 +71,7 @@ class Cleanup extends BaseCron
                     break;
             }
         } catch (\Exception $e) {
-            $this->helperData->errorLog(__METHOD__, $e->getMessage());
+            $this->helperData->errorLog(__METHOD__, $this->helperData->getExceptionTrace($e));
         }
     }
 
@@ -83,7 +83,7 @@ class Cleanup extends BaseCron
             $result = $this->connection->query($sql);
             $items = $result->fetchAll();
         } catch (\Exception $e) {
-            $this->helperData->errorLog(__METHOD__, $e->getMessage());
+            $this->helperData->errorLog(__METHOD__, $this->helperData->getExceptionTrace($e));
             $items = [];
         } finally {
             return $items;
@@ -100,7 +100,7 @@ class Cleanup extends BaseCron
             $count = $result->rowCount();
             $this->helperData->log("- Expired $count old carts");
         } catch (\Exception $e) {
-            $this->helperData->errorLog(__METHOD__, $e->getMessage());
+            $this->helperData->errorLog(__METHOD__, $this->helperData->getExceptionTrace($e));
         }
     }
 
@@ -122,7 +122,7 @@ class Cleanup extends BaseCron
                     break;
             }
         } catch (\Exception $e) {
-            $this->helperData->errorLog(__METHOD__, $e->getMessage());
+            $this->helperData->errorLog(__METHOD__, $this->helperData->getExceptionTrace($e));
         }
     }
 
@@ -133,7 +133,7 @@ class Cleanup extends BaseCron
             $result = $this->connection->query($this->sqlSelectInvalid);
             $items = $result->fetchAll();
         } catch (\Exception $e) {
-            $this->helperData->errorLog(__METHOD__, $e->getMessage());
+            $this->helperData->errorLog(__METHOD__, $this->helperData->getExceptionTrace($e));
             $items = [];
         } finally {
             return $items;
@@ -151,7 +151,7 @@ class Cleanup extends BaseCron
             $count = $result->rowCount();
             $this->helperData->log("- Deleted $count deleted/disabled cart items");
         } catch (\Exception $e) {
-            $this->helperData->errorLog(__METHOD__, $e->getMessage());
+            $this->helperData->errorLog(__METHOD__, $this->helperData->getExceptionTrace($e));
         }
     }
 }
